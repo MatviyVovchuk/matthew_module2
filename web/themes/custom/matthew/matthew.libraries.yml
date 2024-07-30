@@ -1,0 +1,6 @@
+global-styling:
+  version: 1.x
+  css:
+    theme:
+      dest/css/style.css: {}
+      dest/css/style.min.css: {}

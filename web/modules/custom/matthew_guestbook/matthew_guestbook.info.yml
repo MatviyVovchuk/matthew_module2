@@ -1,0 +1,10 @@
+name: 'Guestbook'
+type: module
+description: 'A guestbook module for leaving comments and feedback.'
+core_version_requirement: ^9 || ^10
+package: Custom
+version: 1.0
+dependencies:
+  - drupal:field
+  - drupal:text
+  - drupal:user
