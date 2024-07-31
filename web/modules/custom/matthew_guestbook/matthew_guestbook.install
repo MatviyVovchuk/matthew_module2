@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function matthew_guestbook_install() {
+  \Drupal::database()->schema()->createTable('guestbook_entries', [
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ],
+      'email' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'phone' => [
+        'type' => 'varchar',
+        'length' => 15,
+        'not null' => TRUE,
+      ],
+      'message' => [
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+  ]);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function matthew_guestbook_uninstall() {
+  \Drupal::database()->schema()->dropTable('guestbook_entries');
+}

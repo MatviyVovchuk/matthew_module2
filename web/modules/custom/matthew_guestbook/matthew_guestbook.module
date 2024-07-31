@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Defines hook implementations for the Matthew module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function matthew_theme(array $existing, string $type, string $theme, string $path): array {
+  $extensionPathResolver = Drupal::service('extension.path.resolver');
+  return [
+    'guestbook-entries' => [
+      'variables' => [
+        'entries' => [],
+      ],
+      'template' => 'guestbook-entries',
+      'path' => $extensionPathResolver->getPath('module', 'matthew_guestbook') . '/templates',
+    ],
+  ];
+}

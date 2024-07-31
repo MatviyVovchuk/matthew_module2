@@ -1,0 +1,14 @@
+<div id="form-messages"></div>
+<div class="guestbook-entries">
+  {% for entry in entries %}
+    <div class="guestbook-entry">
+      <h3>{{ entry.name }}</h3>
+      <p><strong>Email:</strong> {{ entry.email }}</p>
+      <p><strong>Phone:</strong> {{ entry.phone }}</p>
+      <div class="content">{{ entry.message }}</div>
+      <small>{{ entry.created|date('d/m/Y H:i') }}</small>
+    </div>
+  {% else %}
+    <p>{{ 'No entries found.'|t }}</p>
+  {% endfor %}
+</div>

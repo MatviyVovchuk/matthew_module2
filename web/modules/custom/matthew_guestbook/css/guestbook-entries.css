@@ -1,0 +1,13 @@
+.guestbook-entries {
+  margin-top: 20px;
+}
+
+.guestbook-entry {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.guestbook-entry h3 {
+  margin-top: 0;
+}
