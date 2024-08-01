@@ -1,46 +1,110 @@
 <?php
 
+use Drupal\Core\Database\Database;
+use Drupal\file\Entity\File;
+
 /**
- * Implements hook_install().
+ * Implements hook_schema().
  */
-function matthew_guestbook_install() {
-  \Drupal::database()->schema()->createTable('guestbook_entries', [
+function matthew_guestbook_schema() {
+  $schema['guestbook_entries'] = [
+    'description' => 'Stores guestbook entries.',
     'fields' => [
       'id' => [
         'type' => 'serial',
         'not null' => TRUE,
+        'description' => 'Primary Key: Unique guestbook entry ID.',
       ],
       'name' => [
         'type' => 'varchar',
         'length' => 100,
         'not null' => TRUE,
+        'description' => 'Name of the person who left the entry.',
       ],
       'email' => [
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
+        'description' => 'Email address of the person who left the entry.',
       ],
       'phone' => [
         'type' => 'varchar',
         'length' => 15,
         'not null' => TRUE,
+        'description' => 'Phone number of the person who left the entry.',
       ],
       'message' => [
         'type' => 'text',
         'not null' => TRUE,
+        'description' => 'The guestbook message.',
+      ],
+      'review' => [
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'The review text.',
+      ],
+      'avatar_fid' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'The File ID of the avatar image.',
+      ],
+      'review_image_fid' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'The File ID of the review image.',
       ],
       'created' => [
         'type' => 'int',
         'not null' => TRUE,
+        'description' => 'The Unix timestamp when the entry was created.',
       ],
     ],
     'primary key' => ['id'],
-  ]);
+    'indexes' => [
+      'created' => ['created'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function matthew_guestbook_install() {
+  // The schema is now defined in hook_schema(), so we don't need to create the table here.
 }
 
 /**
  * Implements hook_uninstall().
  */
 function matthew_guestbook_uninstall() {
-  \Drupal::database()->schema()->dropTable('guestbook_entries');
+  $schema = Database::getConnection()->schema();
+
+  // Get all entries from the guestbook table
+  $entries = Database::getConnection()->select('guestbook_entries', 'g')
+    ->fields('g', ['avatar_fid', 'review_image_fid'])
+    ->execute()
+    ->fetchAll();
+
+  // Delete associated files
+  foreach ($entries as $entry) {
+    if (!empty($entry->avatar_fid)) {
+      $file = File::load($entry->avatar_fid);
+      if ($file) {
+        $file->delete();
+      }
+    }
+    if (!empty($entry->review_image_fid)) {
+      $file = File::load($entry->review_image_fid);
+      if ($file) {
+        $file->delete();
+      }
+    }
+  }
+
+  // Drop the table
+  if ($schema->tableExists('guestbook_entries')) {
+    $schema->dropTable('guestbook_entries');
+  }
 }
