@@ -1,0 +1,20 @@
+uuid: 78a21025-ad6c-4720-8abb-68f7f582acf3
+langcode: en
+status: true
+dependencies:
+  theme:
+    - matthew
+_core:
+  default_config_hash: OQ9aJ-4qVwK1x00o9EOYK4eFDjQr_HLpbPiJaPSVZiQ
+id: matthew_local_actions
+theme: matthew
+region: content
+weight: -10
+provider: null
+plugin: local_actions_block
+settings:
+  id: local_actions_block
+  label: 'Primary admin actions'
+  label_display: '0'
+  provider: core
+visibility: {  }

@@ -1,0 +1,62 @@
+.media-library-form-element {
+  margin-bottom: 20px;
+}
+
+.media-library-form-element .fieldset-legend {
+  font-size: var(--gin-font-size-s);
+  font-weight: var(--gin-font-weight-semibold);
+  color: var(--gin-color-title);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.media-library-form-element .description {
+  margin-top: calc(6rem / 16);
+  margin-bottom: calc(6rem / 16);
+  color: var(--input-fg-color--description);
+  font-size: var(--font-size-xs);
+  line-height: calc(17rem / 16);
+}
+
+.media-library-selection {
+  margin-top: 10px;
+}
+
+.media-library-open-button {
+  margin-top: 10px;
+}
+
+.fieldset-wrapper {
+  margin: var(--space-l) var(--space-l) calc(var(--space-m) + var(--space-s));
+}
+
+fieldset.media-library-form-element {
+  color: var(--gin-color-text-light);
+  padding-top: var(--gin-spacing-xs);
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+  border-color: var(--gin-border-color);
+  border-radius: var(--gin-border-m);
+  box-shadow: none;
+  border: var(--details-border-size) solid var(--details-border-color);
+  margin: var(--space-m) 0;
+}
+
+fieldset.media-library-form-element legend {
+  display: contents;
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-m);
+  color: var(--color-gray-800);
+  font-weight: bold;
+}
+
+.fieldset-wrapper div.js-media-library-selection.media-library-selection.js-form-wrapper.form-wrapper {
+  -webkit-margin-before: 0;
+  margin-block-start: 0;
+}
+
+.fieldset-wrapper p.media-library-form-element-empty-text {
+  margin: 0;
+}

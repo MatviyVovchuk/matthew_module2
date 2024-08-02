@@ -28,6 +28,10 @@ module:
   image: 0
   link: 0
   masquerade: 0
+  matthew_guestbook: 0
+  media: 0
+  media_library: 0
+  media_library_form_element: 0
   menu_link_content: 0
   menu_ui: 0
   mysql: 0
@@ -52,4 +56,5 @@ theme:
   olivero: 0
   claro: 0
   gin: 0
+  matthew: 0
 profile: standard

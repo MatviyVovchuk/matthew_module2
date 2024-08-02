@@ -8,7 +8,7 @@
 /**
  * Implements hook_theme().
  */
-function matthew_theme(array $existing, string $type, string $theme, string $path): array {
+function matthew_guestbook_theme(array $existing, string $type, string $theme, string $path): array {
   $extensionPathResolver = Drupal::service('extension.path.resolver');
   return [
     'guestbook-entries' => [
