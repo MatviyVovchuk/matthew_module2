@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Install, update and uninstall functions for the matthew_guestbook module.
+ */
+
 use Drupal\Core\Database\Database;
 use Drupal\file\Entity\File;
 
@@ -69,25 +74,19 @@ function matthew_guestbook_schema() {
 }
 
 /**
- * Implements hook_install().
- */
-function matthew_guestbook_install() {
-  // The schema is now defined in hook_schema(), so we don't need to create the table here.
-}
-
-/**
  * Implements hook_uninstall().
  */
 function matthew_guestbook_uninstall() {
   $schema = Database::getConnection()->schema();
 
-  // Get all entries from the guestbook table
-  $entries = Database::getConnection()->select('guestbook_entries', 'g')
+  // Get all entries from the guestbook table.
+  $entries = Database::getConnection()
+    ->select('guestbook_entries', 'g')
     ->fields('g', ['avatar_fid', 'review_image_fid'])
     ->execute()
     ->fetchAll();
 
-  // Delete associated files
+  // Delete associated files.
   foreach ($entries as $entry) {
     if (!empty($entry->avatar_fid)) {
       $file = File::load($entry->avatar_fid);
@@ -103,7 +102,7 @@ function matthew_guestbook_uninstall() {
     }
   }
 
-  // Drop the table
+  // Drop the table.
   if ($schema->tableExists('guestbook_entries')) {
     $schema->dropTable('guestbook_entries');
   }
