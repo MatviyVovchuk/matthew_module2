@@ -354,16 +354,22 @@ class GuestbookForm extends FormBase {
     $ajax_response = new AjaxResponse();
     $avatar = $form_state->getValue('avatar');
 
-    if (!empty($avatar)) {
-      $file = $this->entityTypeManager->getStorage('file')->load($avatar[0]);
-      if ($file) {
-        $errors = file_validate($file, $form['avatar']['#upload_validators']);
-        if (!empty($errors)) {
-          $error_message = reset($errors);
-          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-avatar-wrapper"]', FALSE);
-        }
-        else {
-          $this->addValidationResponse($ajax_response, $this->t('Avatar is valid.'), '[data-drupal-selector="edit-avatar-wrapper"]', TRUE);
+    if (!empty($avatar) && is_array($avatar)) {
+      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($avatar));
+      if ($media_entity) {
+        $file_id = $media_entity->get('field_media_image')->target_id;
+        if (!empty($file_id)) {
+          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+          if ($file) {
+            $errors = file_validate($file, $form['avatar']['#upload_validators']);
+            if (!empty($errors)) {
+              $error_message = reset($errors);
+              $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-avatar-wrapper"]', FALSE);
+            }
+            else {
+              $this->addValidationResponse($ajax_response, $this->t('Avatar is valid.'), '[data-drupal-selector="edit-avatar-wrapper"]', TRUE);
+            }
+          }
         }
       }
     }
@@ -389,16 +395,22 @@ class GuestbookForm extends FormBase {
     $ajax_response = new AjaxResponse();
     $review_image = $form_state->getValue('review_image');
 
-    if (!empty($review_image)) {
-      $file = $this->entityTypeManager->getStorage('file')->load($review_image[0]);
-      if ($file) {
-        $errors = file_validate($file, $form['review_image']['#upload_validators']);
-        if (!empty($errors)) {
-          $error_message = reset($errors);
-          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-review-image-wrapper"]', FALSE);
-        }
-        else {
-          $this->addValidationResponse($ajax_response, $this->t('Review image is valid.'), '[data-drupal-selector="edit-review-image-wrapper"]', TRUE);
+    if (!empty($review_image) && is_array($review_image)) {
+      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($review_image));
+      if ($media_entity) {
+        $file_id = $media_entity->get('field_media_image')->target_id;
+        if (!empty($file_id)) {
+          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+          if ($file) {
+            $errors = file_validate($file, $form['review_image']['#upload_validators']);
+            if (!empty($errors)) {
+              $error_message = reset($errors);
+              $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-review-image-wrapper"]', FALSE);
+            }
+            else {
+              $this->addValidationResponse($ajax_response, $this->t('Review image is valid.'), '[data-drupal-selector="edit-review-image-wrapper"]', TRUE);
+            }
+          }
         }
       }
     }
@@ -440,41 +452,42 @@ class GuestbookForm extends FormBase {
       $form_state->setErrorByName('review', $this->t('The review cannot be empty.'));
     }
 
+    // Validate avatar image.
     $avatar = $form_state->getValue('avatar');
-    if (!empty($avatar)) {
-      $file = $this->entityTypeManager->getStorage('file')->load($avatar[0]);
-      if ($file) {
-        $errors = file_validate($file, $form['avatar']['#upload_validators']);
-        if (!empty($errors)) {
-          $error_message = reset($errors);
-          $this->addValidationResponse($response, $error_message, '#edit-avatar', FALSE);
-        }
-        else {
-          $this->addValidationResponse($response, $this->t('Avatar is valid.'), '#edit-avatar', TRUE);
+    if (!empty($avatar) && is_array($avatar)) {
+      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($avatar));
+      if ($media_entity) {
+        $file_id = $media_entity->get('field_media_image')->target_id;
+        if (!empty($file_id)) {
+          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+          if ($file) {
+            $errors = file_validate($file, $form['avatar']['#upload_validators']);
+            if (!empty($errors)) {
+              $error_message = reset($errors);
+              $this->addValidationResponse($response, $error_message, '#edit-avatar', FALSE);
+            }
+          }
         }
       }
-    }
-    else {
-      $this->addValidationResponse($response, $this->t('No avatar selected.'), '#edit-avatar', TRUE);
     }
 
     // Validate review image.
     $review_image = $form_state->getValue('review_image');
-    if (!empty($review_image)) {
-      $file = $this->entityTypeManager->getStorage('file')->load($review_image[0]);
-      if ($file) {
-        $errors = file_validate($file, $form['review_image']['#upload_validators']);
-        if (!empty($errors)) {
-          $error_message = reset($errors);
-          $this->addValidationResponse($response, $error_message, '#edit-review-image', FALSE);
-        }
-        else {
-          $this->addValidationResponse($response, $this->t('Review image is valid.'), '#edit-review-image', TRUE);
+    if (!empty($review_image) && is_array($review_image)) {
+      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($review_image));
+      if ($media_entity) {
+        $file_id = $media_entity->get('field_media_image')->target_id;
+        if (!empty($file_id)) {
+          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+          if ($file) {
+            $errors = file_validate($file, $form['review_image']['#upload_validators']);
+            if (!empty($errors)) {
+              $error_message = reset($errors);
+              $this->addValidationResponse($response, $error_message, '#edit-review-image', FALSE);
+            }
+          }
         }
       }
-    }
-    else {
-      $this->addValidationResponse($response, $this->t('No review image selected.'), '#edit-review-image', TRUE);
     }
 
     return $response;
@@ -485,6 +498,43 @@ class GuestbookForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // This function can be left empty as we are handling submission via AJAX.
+  }
+
+  /**
+   * Retrieves the file ID of an image from a Media Library field.
+   *
+   * @param string $fieldName
+   *   The name of the Media Library field in the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current form state.
+   *
+   * @return int
+   *   The file ID if found, or -1 if not found.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getImageId(string $fieldName, FormStateInterface $form_state): int {
+    $media_id = $form_state->getValue($fieldName);
+
+    if (!empty($media_id) && is_array($media_id)) {
+      // Load the first media entity ID from the array.
+      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($media_id));
+
+      if ($media_entity) {
+        $file_id = $media_entity->get('field_media_image')->target_id;
+
+        if (!empty($file_id)) {
+          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+
+          if ($file) {
+            return $file->id();
+          }
+        }
+      }
+    }
+
+    return -1;
   }
 
   /**
@@ -509,6 +559,9 @@ class GuestbookForm extends FormBase {
       return $response;
     }
 
+    $avatar = $this->getImageId('avatar', $form_state);
+    $image = $this->getImageId('review_image', $form_state);
+
     $connection = Database::getConnection();
     $fields = [
       'name' => $form_state->getValue('name'),
@@ -516,22 +569,10 @@ class GuestbookForm extends FormBase {
       'phone' => $form_state->getValue('phone'),
       'message' => $form_state->getValue('message'),
       'review' => $form_state->getValue('review'),
+      'avatar_fid' => $avatar == -1 ? NULL : $avatar,
+      'review_image_fid' => $image == -1 ? NULL : $image,
       'created' => time(),
     ];
-
-    // Handle avatar.
-    $avatar = $form_state->getValue('avatar');
-    $media_entity = $this->entityTypeManager->getStorage('media')->load($avatar);
-    $file_id = $media_entity->get('field_media_image')->target_id;
-    $file = $this->entityTypeManager->getStorage('file')->load($file_id);
-    $fields['avatar_fid'] = $file->id();
-
-    // Handle image.
-    $image = $form_state->getValue('review_image');
-    $media_entity = $this->entityTypeManager->getStorage('media')->load($image);
-    $file_id = $media_entity->get('field_media_image')->target_id;
-    $file = $this->entityTypeManager->getStorage('file')->load($file_id);
-    $fields['review_image_fid'] = $file->id();
 
     // Insert into database.
     $connection->insert('guestbook_entries')

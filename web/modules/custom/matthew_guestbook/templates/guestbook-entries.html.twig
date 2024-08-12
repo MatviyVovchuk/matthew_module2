@@ -8,6 +8,8 @@
         <p class="entry-meta">{{ entry.email }} | {{ entry.phone }}</p>
         {% if entry.avatar_url %}
           <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
+        {% else %}
+          <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
         {% endif %}
       </div>
       <div class="entry-message">
