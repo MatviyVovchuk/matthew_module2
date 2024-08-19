@@ -9,7 +9,7 @@ matthew_guestbook.page:
 matthew_guestbook.form:
   path: '/guestbook/add'
   defaults:
-    _form: '\Drupal\matthew_guestbook\Form\GuestbookForm'
+    _controller: '\Drupal\matthew_guestbook\Controller\GuestbookController::add'
     _title: 'Add Guestbook Entry'
   requirements:
     _permission: 'access content'

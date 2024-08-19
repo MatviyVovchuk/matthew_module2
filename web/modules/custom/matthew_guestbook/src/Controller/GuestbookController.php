@@ -48,6 +48,16 @@ class GuestbookController extends ControllerBase {
   }
 
   /**
+   * Displays the form for adding a new guestbook entry.
+   *
+   * @return array
+   *   A render array for the guestbook add entry form.
+   */
+  public function add() {
+    return $this->formBuilder->getForm('Drupal\matthew_guestbook\Form\GuestbookForm');
+  }
+
+  /**
    * Provides an edit form for a guestbook entry.
    *
    * @param int $id

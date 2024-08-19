@@ -71,6 +71,7 @@ class GuestbookDeleteForm extends ConfirmFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $connection = Database::getConnection();
 
+    // Load the entry from the database.
     $query = $connection->select('guestbook_entries', 'g')
       ->fields('g', ['id', 'avatar_fid', 'review_image_fid', 'avatar_mid', 'review_image_mid'])
       ->condition('id', $this->id)
@@ -78,6 +79,7 @@ class GuestbookDeleteForm extends ConfirmFormBase {
     $entry = $query->fetchObject();
 
     if ($entry) {
+      // Delete the media and image file.
       $this->deleteMediaAndFile($entry->avatar_mid, $entry->avatar_fid, 'avatar_fid', 'avatar_mid', $connection);
       $this->deleteMediaAndFile($entry->review_image_mid, $entry->review_image_fid, 'review_image_fid', 'review_image_mid', $connection);
 

@@ -103,7 +103,6 @@ class GuestbookForm extends FormBase {
       '#description' => $this->t('Enter your phone number. Only digits are allowed and it should not exceed 15 characters.'),
       '#required' => TRUE,
       '#attributes' => [
-    // 'pattern' => '/(7|8|9)\d{9}/',
         'maxlength' => 12,
       ],
       '#ajax' => [
@@ -309,6 +308,7 @@ class GuestbookForm extends FormBase {
   public function validateMessageAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $message = $form_state->getValue('message');
+
     if (empty($message)) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '[name="message"]', FALSE);
     }
@@ -332,6 +332,7 @@ class GuestbookForm extends FormBase {
   public function validateReviewAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $message = $form_state->getValue('review');
+
     if (empty($message)) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '[name="review"]', FALSE);
     }
@@ -536,6 +537,7 @@ class GuestbookForm extends FormBase {
   public function ajaxSubmitForm(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
 
+    // Check if all data is valid.
     $this->validateForm($form, $form_state);
     if ($form_state->hasAnyErrors()) {
       foreach ($form_state->getErrors() as $name => $error) {
@@ -548,7 +550,6 @@ class GuestbookForm extends FormBase {
     $avatar_media_id = $form_state->getValue('avatar');
     $avatar_file_id = NULL;
     if (!empty($avatar_media_id)) {
-      // $avatar_media = Media::load($avatar_media_id);
       $avatar_media = $this->entityTypeManager->getStorage('media')->load($avatar_media_id);
       if ($avatar_media) {
         $avatar_media_id = $avatar_media->id();
@@ -563,7 +564,6 @@ class GuestbookForm extends FormBase {
     $review_image_media_id = $form_state->getValue('review_image');
     $review_image_file_id = NULL;
     if (!empty($review_image_media_id)) {
-      // $review_image_media = Media::load($review_image_media_id);
       $review_image_media = $this->entityTypeManager->getStorage('media')->load($review_image_media_id);
       if ($review_image_media) {
         $review_image_media_id = $review_image_media->id();

@@ -48,7 +48,7 @@ class GuestbookEditForm extends GuestbookForm {
 
     // Check if $id is available.
     if (!empty($id)) {
-      // Load the cat record from the database.
+      // Load the record from the database.
       $record = Database::getConnection()->select('guestbook_entries', 'm')
         ->fields('m')
         ->condition('id', $id)
@@ -153,6 +153,7 @@ class GuestbookEditForm extends GuestbookForm {
   public function ajaxSubmitForm(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
 
+    // Check if all data is valid.
     $this->validateForm($form, $form_state);
     if (count($form_state->getErrors()) > 0) {
       foreach ($form_state->getErrors() as $error) {
