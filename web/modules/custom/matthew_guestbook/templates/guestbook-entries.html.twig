@@ -6,33 +6,44 @@
   {% else %}
     {% for entry in entries %}
       <div class="guestbook-entry">
-        <div class="entry-header">
-          <h2>{{ entry.name }}</h2>
-          <p class="entry-meta">{{ entry.email }} | {{ entry.phone }}</p>
-          {% if entry.avatar_url %}
-            <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
-          {% else %}
-            <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
-          {% endif %}
+        <!-- First group: User data and date -->
+        <div class="entry-group entry-user-data">
+          <div class="entry-header">
+            {% if entry.avatar_url %}
+              <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
+            {% else %}
+              <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
+            {% endif %}
+            <h2>{{ entry.name }}</h2>
+
+          </div>
+          <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
         </div>
-        <div class="entry-message">
+
+        <!-- Second group: Feedback -->
+        <div class="entry-group entry-review">
+          <p class="field-label">{{ 'Message'|t }}</p>
           <p>{{ entry.message }}</p>
-        </div>
-        <div class="entry-review">
+          <p class="field-label">{{ 'Review'|t }}</p>
           <p>{{ entry.review }}</p>
           {% if entry.review_image_url %}
             <img src="{{ entry.review_image_url }}" alt="Review image" class="entry-review-image">
           {% endif %}
         </div>
-        <div class="entry-footer">
-          <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
-          {% if is_admin %}
-            <div class="entry-actions">
-              <a href="{{ path('matthew_guestbook.edit', {'id': entry.id}) }}" class="button button--action button--primary edit-button">{{ 'Edit'|t }}</a>
-              <a href="{{ path('matthew_guestbook.delete', {'id': entry.id}) }}" class="button button--action button--danger delete-button">{{ 'Delete'|t }}</a>
-            </div>
-          {% endif %}
+
+        <!-- Third group: Contact details -->
+        <div class="entry-group entry-contact">
+          <p class="entry-meta">{{ 'Email:'|t }} {{ entry.email }}</p>
+          <p class="entry-meta">{{ 'Phone:'|t }} {{ entry.phone }}</p>
         </div>
+
+        <!-- Administrator actions -->
+        {% if is_admin %}
+          <div class="entry-actions">
+            <a href="{{ path('matthew_guestbook.edit', {'id': entry.id}) }}" class="button button--action button--primary edit-button">{{ 'Edit'|t }}</a>
+            <a href="{{ path('matthew_guestbook.delete', {'id': entry.id}) }}" class="button button--action button--danger delete-button">{{ 'Delete'|t }}</a>
+          </div>
+        {% endif %}
       </div>
     {% endfor %}
   {% endif %}
