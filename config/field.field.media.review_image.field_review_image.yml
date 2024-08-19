@@ -1,0 +1,38 @@
+uuid: 4864519d-2fcb-4276-8082-c364e8d1834d
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.media.field_review_image
+    - media.type.review_image
+  module:
+    - image
+id: media.review_image.field_review_image
+field_name: field_review_image
+entity_type: media
+bundle: review_image
+label: 'Review Image'
+description: ''
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  file_extensions: 'jpeg jpg png'
+  max_filesize: '5 MB'
+  max_resolution: ''
+  min_resolution: ''
+  alt_field: true
+  alt_field_required: true
+  title_field: false
+  title_field_required: false
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+field_type: image

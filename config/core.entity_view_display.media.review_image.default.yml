@@ -1,0 +1,55 @@
+uuid: 9c6cd8ed-31b9-4d4e-aaae-72585c122cde
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.media.review_image.field_review_image
+    - media.type.review_image
+  module:
+    - image
+    - user
+id: media.review_image.default
+targetEntityType: media
+bundle: review_image
+mode: default
+content:
+  created:
+    type: timestamp
+    label: hidden
+    settings:
+      date_format: medium
+      custom_date_format: ''
+      timezone: ''
+      tooltip:
+        date_format: long
+        custom_date_format: ''
+      time_diff:
+        enabled: false
+        future_format: '@interval hence'
+        past_format: '@interval ago'
+        granularity: 2
+        refresh: 60
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_review_image:
+    type: image
+    label: visually_hidden
+    settings:
+      image_link: ''
+      image_style: ''
+      image_loading:
+        attribute: lazy
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  uid:
+    type: author
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  name: true
+  thumbnail: true

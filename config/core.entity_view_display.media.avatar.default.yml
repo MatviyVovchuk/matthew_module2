@@ -1,0 +1,32 @@
+uuid: acbde6fa-395e-4c00-92f9-f7a7fdb45713
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.media.avatar.field_avatar_image
+    - media.type.avatar
+  module:
+    - image
+id: media.avatar.default
+targetEntityType: media
+bundle: avatar
+mode: default
+content:
+  field_avatar_image:
+    type: image
+    label: visually_hidden
+    settings:
+      image_link: ''
+      image_style: ''
+      image_loading:
+        attribute: lazy
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  name: true
+  path: true
+  status: true
+  thumbnail: true
+  uid: true

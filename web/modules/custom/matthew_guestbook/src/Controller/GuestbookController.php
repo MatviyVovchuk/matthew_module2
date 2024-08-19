@@ -57,9 +57,7 @@ class GuestbookController extends ControllerBase {
    *   A render array for the edit form.
    */
   public function edit($id) {
-    return [
-      '#markup' => $this->t('Edit functionality for entry ID: @id', ['@id' => $id]),
-    ];
+    return $this->formBuilder->getForm('Drupal\matthew_guestbook\Form\GuestbookEditForm', $id);
   }
 
   /**
@@ -72,9 +70,7 @@ class GuestbookController extends ControllerBase {
    *   A render array for the delete form.
    */
   public function delete($id) {
-    return [
-      '#markup' => $this->t('Delete functionality for entry ID: @id', ['@id' => $id]),
-    ];
+    return $this->formBuilder->getForm('Drupal\matthew_guestbook\Form\GuestbookDeleteForm', $id);
   }
 
 }
