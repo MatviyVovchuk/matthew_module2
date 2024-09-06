@@ -1,7 +1,7 @@
 name: 'Matthew Guestbook'
 type: module
 description: 'A guestbook module for leaving comments and feedback.'
-core_version_requirement: ^8 || ^9 || ^10
+core_version_requirement: ^10
 package: Custom
 version: 1.0
 dependencies:

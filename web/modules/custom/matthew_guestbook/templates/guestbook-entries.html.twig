@@ -2,22 +2,19 @@
   {% if entries is empty %}
     <p>{{ 'There are currently no entries in the guestbook.'|t }}</p>
     <p>{{ 'You can add new entries by clicking the button below.'|t }}</p>
-    <a href="{{ path('matthew_guestbook.form') }}" class="button button--primary">{{ 'Add New Entry'|t }}</a>
+    <a href="{{ path('matthew_guestbook.add') }}" class="button button--primary">{{ 'Add New Entry'|t }}</a>
   {% else %}
     {% for entry in entries %}
       <div class="guestbook-entry">
         <!-- First group: User data and date -->
         <div class="entry-group entry-user-data">
           <div class="entry-header">
-            {% if entry.avatar_url %}
-              <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
-            {% else %}
-              <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
+            {% if entry.avatar_render_array %}
+              {{ entry.avatar_render_array }}
             {% endif %}
             <h2>{{ entry.name }}</h2>
-
           </div>
-          <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
+          <p class="entry-date">{{ entry.formatted_created_date }}</p>
         </div>
 
         <!-- Second group: Feedback -->
@@ -26,15 +23,15 @@
           <p>{{ entry.message }}</p>
           <p class="field-label">{{ 'Review'|t }}</p>
           <p>{{ entry.review }}</p>
-          {% if entry.review_image_url %}
-            <img src="{{ entry.review_image_url }}" alt="Review image" class="entry-review-image">
+          {% if entry.review_image_render_array %}
+            {{ entry.review_image_render_array }}
           {% endif %}
         </div>
 
         <!-- Third group: Contact details -->
         <div class="entry-group entry-contact">
-          <p class="entry-meta">{{ 'Email:'|t }} {{ entry.email }}</p>
-          <p class="entry-meta">{{ 'Phone:'|t }} {{ entry.phone }}</p>
+          <p class="entry-meta">{{ 'Email:'|t }} <a class="mail-phone-link" href="mailto:{{ entry.email }}">{{ entry.email }}</a></p>
+          <p class="entry-meta">{{ 'Phone:'|t }} <a class="mail-phone-link" href="tel:{{ entry.phone }}">{{ entry.phone }}</a></p>
         </div>
 
         <!-- Administrator actions -->
