@@ -21,6 +21,12 @@
       </div>
       <div class="entry-footer">
         <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
+        {% if is_admin %}
+          <div class="entry-actions">
+            <a href="{{ path('matthew_guestbook.edit', {'id': entry.id}) }}" class="button button--action button--primary edit-button">{{ 'Edit'|t }}</a>
+            <a href="{{ path('matthew_guestbook.delete', {'id': entry.id}) }}" class="button button--action button--danger delete-button">{{ 'Delete'|t }}</a>
+          </div>
+        {% endif %}
       </div>
     </div>
   {% endfor %}

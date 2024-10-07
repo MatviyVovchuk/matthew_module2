@@ -2,18 +2,20 @@
 
 namespace Drupal\matthew_guestbook\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CssCommand;
 use Drupal\Core\Ajax\MessageCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Database\Database;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\file\Entity\File;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Implements a custom Guestbook form.
+ */
 class GuestbookForm extends FormBase {
 
   /**
@@ -54,16 +56,14 @@ class GuestbookForm extends FormBase {
   }
 
   /**
-   * @return string
+   * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'guestbook_form';
   }
 
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
-   * @return array
+   * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Add form fields.
@@ -101,8 +101,8 @@ class GuestbookForm extends FormBase {
       '#description' => $this->t('Enter your phone number. Only digits are allowed and it should not exceed 15 characters.'),
       '#required' => TRUE,
       '#attributes' => [
-        'pattern' => '\d*',
-        'maxlength' => 15,
+        'pattern' => '/(7|8|9)\d{9}/',
+        'maxlength' => 12,
       ],
       '#ajax' => [
         'event' => 'change',
@@ -214,16 +214,23 @@ class GuestbookForm extends FormBase {
   }
 
   /**
+   * AJAX callback to validate the name.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validateNameAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $name = $form_state->getValue('name');
     if (mb_strlen($name, 'UTF-8') < 2) {
       $this->addValidationResponse($response, $this->t('The name must be at least 2 characters long.'), '[name="name"]', FALSE);
-    } else {
+    }
+    else {
       $this->addValidationResponse($response, $this->t('The name is valid.'), '[name="name"]', TRUE);
     }
     return $response;
@@ -259,187 +266,237 @@ class GuestbookForm extends FormBase {
   }
 
   /**
+   * AJAX callback to validate the phone number.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validatePhoneAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $phone = $form_state->getValue('phone');
-    if (!ctype_digit($phone)) {
-      $this->addValidationResponse($response, $this->t('The phone number must contain only digits.'), '[name="phone"]', FALSE);
-    } else {
+
+    // Regex pattern for validating phone number.
+    $pattern = '/(7|8|9)\d{9}/';
+
+    if (!preg_match($pattern, $phone)) {
+      $this->addValidationResponse($response, $this->t('The phone number must contain only digits and not exceed 12 characters.'), '[name="phone"]', FALSE);
+    }
+    else {
       $this->addValidationResponse($response, $this->t('The phone number is valid.'), '[name="phone"]', TRUE);
     }
+
     return $response;
   }
 
   /**
+   * AJAX callback to validate the message.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validateMessageAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $message = $form_state->getValue('message');
     if (empty($message)) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '[name="message"]', FALSE);
-    } else {
+    }
+    else {
       $this->addValidationResponse($response, $this->t('The message is valid.'), '[name="message"]', TRUE);
     }
     return $response;
   }
 
   /**
+   * AJAX callback to validate the review.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validateReviewAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
     $message = $form_state->getValue('review');
     if (empty($message)) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '[name="review"]', FALSE);
-    } else {
+    }
+    else {
       $this->addValidationResponse($response, $this->t('The message is valid.'), '[name="review"]', TRUE);
     }
     return $response;
   }
 
   /**
-   * Ajax callback to validate the avatar field.
+   * AJAX callback to validate the avatar.
+   *
+   * @param array $form
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validateAvatarAjax(array &$form, FormStateInterface $form_state) {
     $ajax_response = new AjaxResponse();
     $avatar = $form_state->getValue('avatar');
 
     if (!empty($avatar)) {
-      $file = File::load($avatar[0]);
+      $file = $this->entityTypeManager->getStorage('file')->load($avatar[0]);
       if ($file) {
         $errors = file_validate($file, $form['avatar']['#upload_validators']);
         if (!empty($errors)) {
           $error_message = reset($errors);
-          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-avatar-wrapper"]', false);
-        } else {
-          $this->addValidationResponse($ajax_response, $this->t('Avatar is valid.'), '[data-drupal-selector="edit-avatar-wrapper"]', true);
+          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-avatar-wrapper"]', FALSE);
+        }
+        else {
+          $this->addValidationResponse($ajax_response, $this->t('Avatar is valid.'), '[data-drupal-selector="edit-avatar-wrapper"]', TRUE);
         }
       }
-    } else {
-      $this->addValidationResponse($ajax_response, $this->t('No avatar selected.'), '[data-drupal-selector="edit-avatar-wrapper"]', true);
+    }
+    else {
+      $this->addValidationResponse($ajax_response, $this->t('No avatar selected.'), '[data-drupal-selector="edit-avatar-wrapper"]', TRUE);
     }
 
     return $ajax_response;
   }
 
   /**
-   * Ajax callback to validate the review image field.
+   * AJAX callback to validate the review image.
+   *
+   * @param array $form
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function validateReviewImageAjax(array &$form, FormStateInterface $form_state) {
     $ajax_response = new AjaxResponse();
     $review_image = $form_state->getValue('review_image');
 
     if (!empty($review_image)) {
-      $file = File::load($review_image[0]);
+      $file = $this->entityTypeManager->getStorage('file')->load($review_image[0]);
       if ($file) {
         $errors = file_validate($file, $form['review_image']['#upload_validators']);
         if (!empty($errors)) {
           $error_message = reset($errors);
-          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-review-image-wrapper"]', false);
-        } else {
-          $this->addValidationResponse($ajax_response, $this->t('Review image is valid.'), '[data-drupal-selector="edit-review-image-wrapper"]', true);
+          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-review-image-wrapper"]', FALSE);
+        }
+        else {
+          $this->addValidationResponse($ajax_response, $this->t('Review image is valid.'), '[data-drupal-selector="edit-review-image-wrapper"]', TRUE);
         }
       }
-    } else {
-      $this->addValidationResponse($ajax_response, $this->t('No review image selected.'), '[data-drupal-selector="edit-review-image-wrapper"]', true);
+    }
+    else {
+      $this->addValidationResponse($ajax_response, $this->t('No review image selected.'), '[data-drupal-selector="edit-review-image-wrapper"]', TRUE);
     }
 
     return $ajax_response;
   }
 
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
+   * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
 
-    // Validate name
+    // Validate name.
     if (strlen($form_state->getValue('name')) < 2) {
       $this->addValidationResponse($response, $this->t('The name must be at least 2 characters long.'), '#edit-cat-name', FALSE);
     }
 
-    // Validate email
+    // Validate email.
     if (!filter_var($form_state->getValue('email'), FILTER_VALIDATE_EMAIL)) {
       $this->addValidationResponse($response, $this->t('Invalid email address.'), '#edit-cat-name', FALSE);
     }
 
-    // Validate phone
+    // Validate phone.
     if (!ctype_digit($form_state->getValue('phone'))) {
       $this->addValidationResponse($response, $this->t('The phone number must contain only digits.'), '#edit-cat-name', FALSE);
     }
 
-    // Validate message
+    // Validate message.
     if (empty($form_state->getValue('message'))) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '#edit-cat-name', FALSE);
     }
 
-    // Validate review
+    // Validate review.
     if (empty($form_state->getValue('review'))) {
       $form_state->setErrorByName('review', $this->t('The review cannot be empty.'));
     }
 
     $avatar = $form_state->getValue('avatar');
     if (!empty($avatar)) {
-      $file = File::load($avatar[0]);
+      $file = $this->entityTypeManager->getStorage('file')->load($avatar[0]);
       if ($file) {
         $errors = file_validate($file, $form['avatar']['#upload_validators']);
         if (!empty($errors)) {
           $error_message = reset($errors);
           $this->addValidationResponse($response, $error_message, '#edit-avatar', FALSE);
-        } else {
+        }
+        else {
           $this->addValidationResponse($response, $this->t('Avatar is valid.'), '#edit-avatar', TRUE);
         }
       }
-    } else {
+    }
+    else {
       $this->addValidationResponse($response, $this->t('No avatar selected.'), '#edit-avatar', TRUE);
     }
 
-    // Validate review image
+    // Validate review image.
     $review_image = $form_state->getValue('review_image');
     if (!empty($review_image)) {
-      $file = File::load($review_image[0]);
+      $file = $this->entityTypeManager->getStorage('file')->load($review_image[0]);
       if ($file) {
         $errors = file_validate($file, $form['review_image']['#upload_validators']);
         if (!empty($errors)) {
           $error_message = reset($errors);
           $this->addValidationResponse($response, $error_message, '#edit-review-image', FALSE);
-        } else {
+        }
+        else {
           $this->addValidationResponse($response, $this->t('Review image is valid.'), '#edit-review-image', TRUE);
         }
       }
-    } else {
+    }
+    else {
       $this->addValidationResponse($response, $this->t('No review image selected.'), '#edit-review-image', TRUE);
     }
 
     return $response;
   }
 
-
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
-   * @return void
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // This function can be left empty as we are handling submission via AJAX.
   }
 
   /**
+   * AJAX form submission handler.
+   *
    * @param array $form
-   * @param FormStateInterface $form_state
-   * @return AjaxResponse
-   * @throws \Exception
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state interface.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The AJAX response.
    */
   public function ajaxSubmitForm(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
@@ -462,34 +519,26 @@ class GuestbookForm extends FormBase {
       'created' => time(),
     ];
 
-    // Handle avatar
+    // Handle avatar.
     $avatar = $form_state->getValue('avatar');
-    if (!empty($avatar)) {
-      $file = File::load($avatar[0]);
-      if ($file) {
-        $file->setPermanent();
-        $file->save();
-        $fields['avatar_fid'] = $file->id();
-      }
-    }
+    $media_entity = $this->entityTypeManager->getStorage('media')->load($avatar);
+    $file_id = $media_entity->get('field_media_image')->target_id;
+    $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+    $fields['avatar_fid'] = $file->id();
 
-    // Handle image
+    // Handle image.
     $image = $form_state->getValue('review_image');
-    if (!empty($image)) {
-      $file = File::load($image[0]);
-      if ($file) {
-        $file->setPermanent();
-        $file->save();
-        $fields['review_image_fid'] = $file->id();
-      }
-    }
+    $media_entity = $this->entityTypeManager->getStorage('media')->load($image);
+    $file_id = $media_entity->get('field_media_image')->target_id;
+    $file = $this->entityTypeManager->getStorage('file')->load($file_id);
+    $fields['review_image_fid'] = $file->id();
 
-    // Insert into database
+    // Insert into database.
     $connection->insert('guestbook_entries')
       ->fields($fields)
       ->execute();
 
-    // Display success message
+    // Display success message.
     $response->addCommand(new MessageCommand(
       $this->t('%name, your entry has been saved.', [
         '%name' => $form_state->getValue('name'),
@@ -498,15 +547,16 @@ class GuestbookForm extends FormBase {
       ['type' => 'status']
     ));
 
-    // Reset form state and rebuild the form
+    // Reset form state and rebuild the form.
     $form_state->setRebuild();
     $form_state->setValues([]);
     $form_state->setUserInput([]);
 
-    // Rebuild and replace the form
+    // Rebuild and replace the form.
     $rebuilt_form = $this->formBuilder->rebuildForm($this->getFormId(), $form_state, $form);
     $response->addCommand(new ReplaceCommand('#' . $this->getFormId(), $rebuilt_form));
 
     return $response;
   }
+
 }
