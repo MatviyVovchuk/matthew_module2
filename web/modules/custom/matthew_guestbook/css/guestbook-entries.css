@@ -90,6 +90,16 @@
   margin-left: 10px;
 }
 
+.mail-phone-link {
+  color: #6c757d;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.mail-phone-link:hover {
+  color: #000000;
+}
+
 @media screen and (max-width: 500px) {
   .entry-user-data {
     display: block;

@@ -5,10 +5,12 @@
  * Install, update and uninstall functions for the matthew_guestbook module.
  */
 
+use Drupal\Core\Datetime\Entity\DateFormat;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\image\Entity\ImageStyle;
 use Drupal\media\Entity\MediaType;
 
 /**
@@ -51,16 +53,6 @@ function matthew_guestbook_schema() {
         'not null' => TRUE,
         'description' => 'The review text.',
       ],
-      'avatar_fid' => [
-        'type' => 'int',
-        'not null' => FALSE,
-        'description' => 'The File ID of the avatar image.',
-      ],
-      'review_image_fid' => [
-        'type' => 'int',
-        'not null' => FALSE,
-        'description' => 'The File ID of the review image.',
-      ],
       'avatar_mid' => [
         'type' => 'int',
         'not null' => FALSE,
@@ -88,322 +80,415 @@ function matthew_guestbook_schema() {
 
 /**
  * Implements hook_install().
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
  */
-function matthew_guestbook_install() {
-  // Create media type for avatar.
-  $avatar_media_type = MediaType::create([
-    'id' => 'avatar',
-    'label' => 'Avatar',
-  // Specify the source as 'image'.
-    'source' => 'image',
-    'description' => 'Media type for user avatars.',
-    'source_configuration' => [
-  // The field that will be used as the image source.
-      'source_field' => 'field_avatar_image',
-    ],
+function matthew_guestbook_install(): void {
+  // Create media type and fields for 'avatar'.
+  _matthew_guestbook_create_media_type(
+    'avatar',
+    'Avatar',
+    'field_avatar_image',
+    'Media type for user avatars.',
+    '2 MB'
+  );
+
+  // Configure form and view displays for 'avatar'.
+  _matthew_guestbook_configure_form_display('avatar', 'field_avatar_image');
+  _matthew_guestbook_configure_view_display('avatar', 'field_avatar_image');
+
+  // Create media type and fields for 'review_image'.
+  _matthew_guestbook_create_media_type(
+    'review_image',
+    'Review Image',
+    'field_review_image',
+    'Media type for review images.',
+    '5 MB'
+  );
+
+  // Configure form and view displays for 'review_image'.
+  _matthew_guestbook_configure_form_display('review_image', 'field_review_image');
+  _matthew_guestbook_configure_view_display('review_image', 'field_review_image');
+
+  // Create custom date and time format 'matthew_guestbook_date_format'.
+  _matthew_guestbook_create_date_format([
+    'id' => 'matthew_guestbook_date_format',
+    'label' => 'Matthew Guestbook date format',
+    'pattern' => 'Y-m-d H:i:s',
   ]);
-  $avatar_media_type->save();
 
-  // Add field to the media type 'avatar'.
-  $field_storage = FieldStorageConfig::create([
-    'field_name' => 'field_avatar_image',
-    'entity_type' => 'media',
-    'type' => 'image',
-    'cardinality' => 1,
-  ]);
-  $field_storage->save();
-
-  $field_instance = FieldConfig::create([
-    'field_storage' => $field_storage,
-    'bundle' => 'avatar',
-    'label' => 'Avatar Image',
-  // Set the field as required.
-    'required' => TRUE,
-    'settings' => [
-      'file_extensions' => 'jpeg jpg png',
-      'max_filesize' => '2 MB',
-      'max_resolution' => '',
-      'min_resolution' => '',
-      'alt_field' => TRUE,
-      'alt_field_required' => TRUE,
-      'title_field' => FALSE,
-      'title_field_required' => FALSE,
-    ],
-  ]);
-  $field_instance->save();
-
-  // Manage form display settings for 'avatar'.
-  $form_display = EntityFormDisplay::load('media.avatar.default');
-  if (!$form_display) {
-    $form_display = EntityFormDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'avatar',
-      'mode' => 'default',
-      'status' => TRUE,
-    ]);
-  }
-  $form_display->setComponent('field_avatar_image', [
-    'type' => 'image_image',
-    'weight' => 1,
-  ])
-    ->removeComponent('name')
-    ->save();
-
-  // Create and configure the media_library form display.
-  $media_library_form_display = EntityFormDisplay::load('media.avatar.media_library');
-  if (!$media_library_form_display) {
-    $media_library_form_display = EntityFormDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'avatar',
-      'mode' => 'media_library',
-      'status' => TRUE,
-    ]);
-  }
-  $media_library_form_display->setComponent('field_avatar_image', [
-    'type' => 'image_image',
-    'weight' => 1,
-  ])
-    ->removeComponent('name')
-    ->removeComponent('uid')
-    ->removeComponent('created')
-    ->removeComponent('path')
-    ->removeComponent('status')
-    ->save();
-
-  // Manage display settings for 'avatar' in default mode.
-  $view_display = EntityViewDisplay::load('media.avatar.default');
-  if (!$view_display) {
-    $view_display = EntityViewDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'avatar',
-      'mode' => 'default',
-      'status' => TRUE,
-    ]);
-  }
-  $view_display->setComponent('field_avatar_image', [
-    'type' => 'image',
-    'label' => 'visually_hidden',
-    'weight' => 0,
-  ])
-    ->removeComponent('name')
-    ->removeComponent('uid')
-    ->removeComponent('created')
-    ->removeComponent('path')
-    ->removeComponent('status')
-    ->removeComponent('thumbnail')
-    ->save();
-
-  // Media library view mode settings for 'avatar'.
-  $media_library_display = EntityViewDisplay::load('media.avatar.media_library');
-  if (!$media_library_display) {
-    $media_library_display = EntityViewDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'avatar',
-      'mode' => 'media_library',
-      'status' => TRUE,
-    ]);
-  }
-  $media_library_display->setComponent('thumbnail', [
-    'type' => 'image',
-    'label' => 'hidden',
-    'weight' => 0,
-  ])
-    ->removeComponent('field_avatar_image')
-    ->removeComponent('name')
-    ->removeComponent('uid')
-    ->removeComponent('created')
-    ->removeComponent('path')
-    ->removeComponent('status')
-    ->save();
-
-  // Repeat the same for the 'review_image' media type.
-  $review_image_media_type = MediaType::create([
-    'id' => 'review_image',
-    'label' => 'Review Image',
-  // Specify the source as 'image'.
-    'source' => 'image',
-    'description' => 'Media type for review images.',
-    'source_configuration' => [
-  // The field that will be used as the image source.
-      'source_field' => 'field_review_image',
-    ],
-  ]);
-  $review_image_media_type->save();
-
-  // Add field to the media type 'review_image'.
-  $field_storage = FieldStorageConfig::create([
-    'field_name' => 'field_review_image',
-    'entity_type' => 'media',
-    'type' => 'image',
-    'cardinality' => 1,
-  ]);
-  $field_storage->save();
-
-  $field_instance = FieldConfig::create([
-    'field_storage' => $field_storage,
-    'bundle' => 'review_image',
-    'label' => 'Review Image',
-  // Set the field as required.
-    'required' => TRUE,
-    'settings' => [
-      'file_extensions' => 'jpeg jpg png',
-      'max_filesize' => '5 MB',
-      'max_resolution' => '',
-      'min_resolution' => '',
-      'alt_field' => TRUE,
-      'alt_field_required' => TRUE,
-      'title_field' => FALSE,
-      'title_field_required' => FALSE,
-    ],
-  ]);
-  $field_instance->save();
-
-  // Manage form display settings for 'review_image'.
-  $form_display = EntityFormDisplay::load('media.review_image.default');
-  if (!$form_display) {
-    $form_display = EntityFormDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'review_image',
-      'mode' => 'default',
-      'status' => TRUE,
-    ]);
-  }
-  $form_display->setComponent('field_review_image', [
-    'type' => 'image_image',
-    'weight' => 1,
-  ])
-    ->removeComponent('name')
-    ->save();
-
-  // Create and configure the media_library form display for review_image.
-  $media_library_form_display = EntityFormDisplay::load('media.review_image.media_library');
-  if (!$media_library_form_display) {
-    $media_library_form_display = EntityFormDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'review_image',
-      'mode' => 'media_library',
-      'status' => TRUE,
-    ]);
-  }
-  $media_library_form_display->setComponent('field_review_image', [
-    'type' => 'image_image',
-    'weight' => 1,
-  ])
-    ->removeComponent('name')
-    ->removeComponent('uid')
-    ->removeComponent('created')
-    ->removeComponent('path')
-    ->removeComponent('status')
-    ->save();
-
-  // Manage display settings for 'review_image' in default mode.
-  $view_display = EntityViewDisplay::load('media.review_image.default');
-  if (!$view_display) {
-    $view_display = EntityViewDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'review_image',
-      'mode' => 'default',
-      'status' => TRUE,
-    ]);
-  }
-  $view_display->setComponent('field_review_image', [
-    'type' => 'image',
-    'label' => 'visually_hidden',
-    'weight' => 0,
-  ])
-    ->removeComponent('thumbnail')
-    ->save();
-
-  // Media library view mode settings for 'review_image'.
-  $media_library_display = EntityViewDisplay::load('media.review_image.media_library');
-  if (!$media_library_display) {
-    $media_library_display = EntityViewDisplay::create([
-      'targetEntityType' => 'media',
-      'bundle' => 'review_image',
-      'mode' => 'media_library',
-      'status' => TRUE,
-    ]);
-  }
-  $media_library_display->setComponent('thumbnail', [
-    'type' => 'image',
-    'label' => 'hidden',
-    'weight' => 0,
-  ])
-    ->removeComponent('field_review_image')
-    ->save();
+  // Create custom image styles.
+  _matthew_guestbook_create_image_style('matthew_guestbook_avatar', 'Matthew Guestbook Avatar', TRUE);
+  _matthew_guestbook_create_image_style('matthew_guestbook_review', 'Matthew Guestbook Review', FALSE);
 }
 
 /**
  * Implements hook_uninstall().
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
  */
-function matthew_guestbook_uninstall() {
-  $database = \Drupal::database();
-  $file_storage = \Drupal::entityTypeManager()->getStorage('file');
-  $media_storage = \Drupal::entityTypeManager()->getStorage('media');
+function matthew_guestbook_uninstall(): void {
+  // Delete all medias with media type 'avatar' and 'review_image'.
+  _matthew_guestbook_delete_medias_and_files([
+    'avatar' => 'field_avatar_image',
+    'review_image' => 'field_review_image',
+  ]);
 
-  // Get all entries from the guestbook table.
-  $entries = $database->select('guestbook_entries', 'g')
-    ->fields('g', ['avatar_fid', 'review_image_fid', 'avatar_mid', 'review_image_mid'])
-    ->execute()
-    ->fetchAll();
+  // Delete the 'avatar' media type and its associated field.
+  _matthew_guestbook_delete_media_type('avatar', 'field_avatar_image');
 
-  $file_ids = [];
-  $media_ids = [];
+  // Delete the 'review_image' media type and its associated field.
+  _matthew_guestbook_delete_media_type('review_image', 'field_review_image');
 
-  // Collect all file and media IDs.
-  foreach ($entries as $entry) {
-    if (!empty($entry->avatar_fid)) {
-      $file_ids[] = $entry->avatar_fid;
-    }
-    if (!empty($entry->review_image_fid)) {
-      $file_ids[] = $entry->review_image_fid;
-    }
-    if (!empty($entry->avatar_mid)) {
-      $media_ids[] = $entry->avatar_mid;
-    }
-    if (!empty($entry->review_image_mid)) {
-      $media_ids[] = $entry->review_image_mid;
-    }
-  }
+  // Delete the 'matthew_guestbook_date_format' date and time format.
+  _matthew_guestbook_delete_date_format('matthew_guestbook_date_format');
 
-  // Delete files in bulk.
-  if (!empty($file_ids)) {
-    $files = $file_storage->loadMultiple(array_unique($file_ids));
-    $file_storage->delete($files);
-  }
+  // Delete custom image styles.
+  _matthew_guestbook_delete_image_style('matthew_guestbook_avatar');
+  _matthew_guestbook_delete_image_style('matthew_guestbook_review');
 
-  // Delete media entities in bulk.
-  if (!empty($media_ids)) {
-    $media_entities = $media_storage->loadMultiple(array_unique($media_ids));
-    $media_storage->delete($media_entities);
-  }
-
-  // Drop the table.
-  $schema = $database->schema();
-  if ($schema->tableExists('guestbook_entries')) {
-    $schema->dropTable('guestbook_entries');
-  }
-
-  // Delete the avatar media type.
-  if ($media_type = MediaType::load('avatar')) {
-    $media_type->delete();
-  }
-
-  // Delete the field used by avatar media type.
-  if ($field_storage = FieldStorageConfig::load('media.field_avatar_image')) {
-    $field_storage->delete();
-  }
-
-  // Delete the review image media type.
-  if ($media_type = MediaType::load('review_image')) {
-    $media_type->delete();
-  }
-
-  // Delete the field used by review image media type.
-  if ($field_storage = FieldStorageConfig::load('media.field_review_image')) {
-    $field_storage->delete();
-  }
+  _matthew_guestbook_drop_table('guestbook_entries');
 
   // Clear all caches.
   drupal_flush_all_caches();
+}
+
+/**
+ * Drops the specified table if it exists.
+ *
+ * @param string $table_name
+ *   The name of the table to drop.
+ */
+function _matthew_guestbook_drop_table(string $table_name): void {
+  // Get the database connection.
+  $database = \Drupal::database();
+
+  // Check if the specified table exists.
+  $schema = $database->schema();
+  if ($schema->tableExists($table_name)) {
+    // Drop the table if it exists.
+    $schema->dropTable($table_name);
+
+    // Log the table drop event.
+    \Drupal::logger('matthew_guestbook')->notice('The @table table has been dropped.', ['@table' => $table_name]);
+  }
+}
+
+/**
+ * Create a custom image style.
+ *
+ * @param string $style_name
+ *   The machine name of the image style to create.
+ * @param string $style_label
+ *   The label of the image style.
+ * @param bool $use_resize_effect
+ *   Whether to add a default image resize effect with fixed dimensions
+ *   (50x50) to the image style.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_create_image_style(string $style_name, string $style_label, bool $use_resize_effect): void {
+  // Check if the style already exists.
+  $style = ImageStyle::load($style_name);
+  if (!$style) {
+    // Create a new image style entity.
+    $style = ImageStyle::create([
+      'name' => $style_name,
+      'label' => $style_label,
+    ]);
+
+    // Add the image resize effect if the flag is true.
+    if ($use_resize_effect) {
+      $style->addImageEffect([
+        'id' => 'image_resize',
+        'weight' => 0,
+        'data' => [
+          'width' => 50,
+          'height' => 50,
+        ],
+      ]);
+    }
+
+    // Save the new style.
+    $style->save();
+
+    \Drupal::logger('matthew_guestbook')->notice('Created image style: @style', ['@style' => $style_label]);
+  }
+}
+
+/**
+ * Delete a custom image style.
+ *
+ * @param string $style_name
+ *   The machine name of the image style to delete.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_delete_image_style(string $style_name): void {
+  $style = ImageStyle::load($style_name);
+  if ($style) {
+    $style->delete();
+    \Drupal::logger('matthew_guestbook')->notice('Deleted image style: @style', ['@style' => $style_name]);
+  }
+}
+
+/**
+ * Create a custom date format.
+ *
+ * @param array $format_details
+ *   An associative array containing the following keys:
+ *   - 'id': The machine name of the date format (required).
+ *   - 'label': The label of the date format (required).
+ *   - 'pattern': The date format pattern (required).
+ *
+ * @throws \InvalidArgumentException|EntityStorageException
+ *   If any of the required keys are missing in the $format_details array.
+ */
+function _matthew_guestbook_create_date_format(array $format_details): void {
+  // Ensure all required details are provided.
+  if (empty($format_details['id']) || empty($format_details['label']) || empty($format_details['pattern'])) {
+    throw new \InvalidArgumentException('The keys "id", "label", and "pattern" are required.');
+  }
+
+  // Check if this date format already exists.
+  if (!DateFormat::load($format_details['id'])) {
+    // Create a new date format.
+    $format = DateFormat::create($format_details);
+    $format->save();
+
+    \Drupal::logger('matthew_guestbook')->notice('Created date format: @id', ['@id' => $format_details['id']]);
+  }
+}
+
+/**
+ * Delete a custom date format.
+ *
+ * @param string $format_id
+ *   The machine name of the date format to delete.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_delete_date_format(string $format_id): void {
+  // Load and delete the date format, if it exists.
+  if ($format = DateFormat::load($format_id)) {
+    $format->delete();
+    \Drupal::logger('matthew_guestbook')->notice('Deleted date format: @id', ['@id' => $format_id]);
+  }
+}
+
+/**
+ * Delete media entities and their associated files based on the media types.
+ *
+ * @param array $media_types_to_delete
+ *   An associative array where the keys are media types and the values are
+ *   the corresponding file field names.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_delete_medias_and_files(array $media_types_to_delete): void {
+  // Get the media storage and file storage services.
+  $media_storage = \Drupal::entityTypeManager()->getStorage('media');
+  $file_storage = \Drupal::entityTypeManager()->getStorage('file');
+
+  // Loop through each media type provided in the array.
+  foreach ($media_types_to_delete as $media_type => $file_field_name) {
+    // Load media entities of the specified type.
+    $media_ids = $media_storage->getQuery()
+      ->condition('bundle', $media_type)
+      ->accessCheck(FALSE)
+      ->execute();
+
+    // Load and delete the media entities and their associated files.
+    foreach ($media_ids as $media_id) {
+      $media = $media_storage->load($media_id);
+      if ($media) {
+        // Get the file field on the media entity.
+        $file_field = $media->get($file_field_name);
+        if ($file_field && !$file_field->isEmpty()) {
+          // Load the file entity.
+          $file = $file_storage->load($file_field->target_id);
+          // Delete the file entity.
+          $file?->delete();
+        }
+        // Delete the media entity.
+        $media->delete();
+      }
+    }
+  }
+}
+
+/**
+ * Creates a media type and associated image field.
+ *
+ * @param string $id
+ *   The machine name of the media type.
+ * @param string $label
+ *   The label of the media type.
+ * @param string $field_name
+ *   The machine name of the field.
+ * @param string $description
+ *   A description for the media type.
+ * @param string $max_filesize
+ *   The maximum file size allowed for the image.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_create_media_type(string $id, string $label, string $field_name, string $description, string $max_filesize): void {
+  // Create the media type.
+  $media_type = MediaType::create([
+    'id' => $id,
+    'label' => $label,
+    'source' => 'image',
+    'description' => $description,
+    'source_configuration' => [
+      'source_field' => $field_name,
+    ],
+  ]);
+  $media_type->save();
+
+  // Create field storage.
+  $field_storage = FieldStorageConfig::create([
+    'field_name' => $field_name,
+    'entity_type' => 'media',
+    'type' => 'image',
+    'cardinality' => 1,
+  ]);
+  $field_storage->save();
+
+  // Create field instance.
+  $field_instance = FieldConfig::create([
+    'field_storage' => $field_storage,
+    'bundle' => $id,
+    'label' => $label . ' Image',
+    'required' => TRUE,
+    'settings' => [
+      'file_extensions' => 'jpeg jpg png',
+      'max_filesize' => $max_filesize,
+      'alt_field' => TRUE,
+      'alt_field_required' => TRUE,
+      'title_field' => FALSE,
+    ],
+  ]);
+  $field_instance->save();
+}
+
+/**
+ * Configures form display for a media type.
+ *
+ * @param string $bundle
+ *   The media type bundle.
+ * @param string $field_name
+ *   The field name to configure in the form display.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_configure_form_display(string $bundle, string $field_name): void {
+  $form_display = EntityFormDisplay::load("media.{$bundle}.default");
+  if (!$form_display) {
+    $form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => $bundle,
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $form_display->setComponent($field_name, [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])->removeComponent('name')->save();
+
+  $media_library_form_display = EntityFormDisplay::load("media.{$bundle}.media_library");
+  if (!$media_library_form_display) {
+    $media_library_form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => $bundle,
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_form_display->setComponent($field_name, [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->save();
+}
+
+/**
+ * Configures view display for a media type.
+ *
+ * @param string $bundle
+ *   The media type bundle.
+ * @param string $field_name
+ *   The field name to configure in the view display.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_configure_view_display(string $bundle, string $field_name): void {
+  $view_display = EntityViewDisplay::load("media.{$bundle}.default");
+  if (!$view_display) {
+    $view_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => $bundle,
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $view_display->setComponent($field_name, [
+    'type' => 'image',
+    'label' => 'visually_hidden',
+    'weight' => 0,
+  ])->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->removeComponent('thumbnail')
+    ->save();
+
+  $media_library_display = EntityViewDisplay::load("media.{$bundle}.media_library");
+  if (!$media_library_display) {
+    $media_library_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => $bundle,
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_display->setComponent('thumbnail', [
+    'type' => 'image',
+    'label' => 'hidden',
+    'weight' => 0,
+  ])->removeComponent($field_name)
+    ->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->save();
+}
+
+/**
+ * Deletes a media type and its associated field.
+ *
+ * @param string $bundle
+ *   The media type bundle to delete.
+ * @param string $field_name
+ *   The field name associated with the media type.
+ *
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function _matthew_guestbook_delete_media_type(string $bundle, string $field_name): void {
+  // Delete the media type.
+  if ($media_type = MediaType::load($bundle)) {
+    $media_type->delete();
+  }
+
+  // Delete the field storage.
+  if ($field_storage = FieldStorageConfig::load("media.{$field_name}")) {
+    $field_storage->delete();
+  }
 }

@@ -6,10 +6,10 @@ matthew_guestbook.page:
   requirements:
     _permission: 'access content'
 
-matthew_guestbook.form:
+matthew_guestbook.add:
   path: '/guestbook/add'
   defaults:
-    _form: '\Drupal\matthew_guestbook\Form\GuestbookForm'
+    _form: '\Drupal\matthew_guestbook\Form\AddGuestbookForm'
     _title: 'Add Guestbook Entry'
   requirements:
     _permission: 'access content'
@@ -17,7 +17,7 @@ matthew_guestbook.form:
 matthew_guestbook.edit:
   path: '/guestbook/{id}/edit'
   defaults:
-    _controller: '\Drupal\matthew_guestbook\Controller\GuestbookController::edit'
+    _form: '\Drupal\matthew_guestbook\Form\EditGuestbookForm'
     _title: 'Edit Guestbook Entry'
   requirements:
     _permission: 'administer site configuration'
@@ -25,7 +25,7 @@ matthew_guestbook.edit:
 matthew_guestbook.delete:
   path: '/guestbook/{id}/delete'
   defaults:
-    _controller: '\Drupal\matthew_guestbook\Controller\GuestbookController::delete'
+    _form: '\Drupal\matthew_guestbook\Form\DeleteGuestbookForm'
     _title: 'Delete Guestbook Entry'
   requirements:
     _permission: 'administer site configuration'
