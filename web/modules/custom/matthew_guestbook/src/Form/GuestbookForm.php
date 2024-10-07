@@ -182,6 +182,12 @@ class GuestbookForm extends FormBase {
       ],
     ];
 
+    $form['#attached'] = [
+      'library' => [
+        'matthew_guestbook/media_library_styles',
+      ],
+    ];
+
     return $form;
   }
 

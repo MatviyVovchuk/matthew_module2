@@ -1,0 +1,20 @@
+uuid: f1afb6cc-6c9e-4733-a2ff-99587b5f81cd
+langcode: en
+status: true
+dependencies:
+  theme:
+    - matthew
+_core:
+  default_config_hash: HLQY2xgby8K3vN_98hiOSasOhm9pdCsH234-s0duJ8Q
+id: matthew_page_title
+theme: matthew
+region: header
+weight: -30
+provider: null
+plugin: page_title_block
+settings:
+  id: page_title_block
+  label: 'Page title'
+  label_display: '0'
+  provider: core
+visibility: {  }

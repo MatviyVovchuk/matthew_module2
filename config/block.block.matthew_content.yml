@@ -1,0 +1,22 @@
+uuid: cd6fb766-28df-4e24-aae0-3a7b7d45ba7f
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - matthew
+_core:
+  default_config_hash: hBHXB7hC05XU7pDYzETt-GUcpFlogK1gkjyAsg0Ym58
+id: matthew_content
+theme: matthew
+region: content
+weight: 0
+provider: null
+plugin: system_main_block
+settings:
+  id: system_main_block
+  label: 'Main page content'
+  label_display: '0'
+  provider: system
+visibility: {  }

@@ -1,0 +1,11 @@
+styles:
+  version: 1.x
+  css:
+    theme:
+      css/guestbook-entries.css: {}
+
+media_library_styles:
+  version: 1.x
+  css:
+    theme:
+      css/fix-media-library.css: {}
