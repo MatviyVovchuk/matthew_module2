@@ -8,3 +8,6 @@ dependencies:
   - drupal:field
   - drupal:text
   - drupal:user
+  - drupal:media
+  - drupal:media_library
+  - media_library_form_element

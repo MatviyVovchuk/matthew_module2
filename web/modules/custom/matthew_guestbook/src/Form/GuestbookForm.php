@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\file\Entity\File;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class GuestbookForm extends FormBase {
@@ -65,6 +66,9 @@ class GuestbookForm extends FormBase {
    * @return array
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    // Add form fields.
+    $form['#id'] = $this->getFormId();
+
     $form['name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Name'),
@@ -117,6 +121,57 @@ class GuestbookForm extends FormBase {
       ],
     ];
 
+    $form['review'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Review'),
+      '#description' => $this->t('Enter your review.'),
+      '#required' => TRUE,
+      '#ajax' => [
+        'event' => 'change',
+        'callback' => '::validateReviewAjax',
+      ],
+    ];
+
+    $form['avatar'] = [
+      '#type' => 'media_library',
+      '#title' => $this->t('Avatar'),
+      '#description' => $this->t('Upload your avatar. Allowed formats: jpeg, jpg, png. Max file size: 2MB.'),
+      '#allowed_bundles' => ['image'],
+      '#required' => FALSE,
+      '#upload_validators' => [
+        'file_validate_extensions' => ['jpeg jpg png'],
+        'file_validate_size' => [2 * 1024 * 1024],
+      ],
+      '#ajax' => [
+        'callback' => '::validateAvatarAjax',
+        'event' => 'change',
+        'progress' => [
+          'type' => 'throbber',
+          'message' => $this->t('Validating...'),
+        ],
+      ],
+    ];
+
+    $form['review_image'] = [
+      '#type' => 'media_library',
+      '#title' => $this->t('Review Image'),
+      '#description' => $this->t('Upload an image for your review. Allowed formats: jpeg, jpg, png. Max file size: 5MB.'),
+      '#allowed_bundles' => ['image'],
+      '#required' => FALSE,
+      '#upload_validators' => [
+        'file_validate_extensions' => ['jpeg jpg png'],
+        'file_validate_size' => [5 * 1024 * 1024],
+      ],
+      '#ajax' => [
+        'callback' => '::validateReviewImageAjax',
+        'event' => 'change',
+        'progress' => [
+          'type' => 'throbber',
+          'message' => $this->t('Validating...'),
+        ],
+      ],
+    ];
+
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [
       '#type' => 'submit',
@@ -129,7 +184,6 @@ class GuestbookForm extends FormBase {
 
     return $form;
   }
-
 
   /**
    * Validates the input and adds AJAX commands to the response.
@@ -235,6 +289,72 @@ class GuestbookForm extends FormBase {
    * @param FormStateInterface $form_state
    * @return AjaxResponse
    */
+  public function validateReviewAjax(array &$form, FormStateInterface $form_state): AjaxResponse {
+    $response = new AjaxResponse();
+    $message = $form_state->getValue('review');
+    if (empty($message)) {
+      $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '[name="review"]', FALSE);
+    } else {
+      $this->addValidationResponse($response, $this->t('The message is valid.'), '[name="review"]', TRUE);
+    }
+    return $response;
+  }
+
+  /**
+   * Ajax callback to validate the avatar field.
+   */
+  public function validateAvatarAjax(array &$form, FormStateInterface $form_state) {
+    $ajax_response = new AjaxResponse();
+    $avatar = $form_state->getValue('avatar');
+
+    if (!empty($avatar)) {
+      $file = File::load($avatar[0]);
+      if ($file) {
+        $errors = file_validate($file, $form['avatar']['#upload_validators']);
+        if (!empty($errors)) {
+          $error_message = reset($errors);
+          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-avatar-wrapper"]', false);
+        } else {
+          $this->addValidationResponse($ajax_response, $this->t('Avatar is valid.'), '[data-drupal-selector="edit-avatar-wrapper"]', true);
+        }
+      }
+    } else {
+      $this->addValidationResponse($ajax_response, $this->t('No avatar selected.'), '[data-drupal-selector="edit-avatar-wrapper"]', true);
+    }
+
+    return $ajax_response;
+  }
+
+  /**
+   * Ajax callback to validate the review image field.
+   */
+  public function validateReviewImageAjax(array &$form, FormStateInterface $form_state) {
+    $ajax_response = new AjaxResponse();
+    $review_image = $form_state->getValue('review_image');
+
+    if (!empty($review_image)) {
+      $file = File::load($review_image[0]);
+      if ($file) {
+        $errors = file_validate($file, $form['review_image']['#upload_validators']);
+        if (!empty($errors)) {
+          $error_message = reset($errors);
+          $this->addValidationResponse($ajax_response, $error_message, '[data-drupal-selector="edit-review-image-wrapper"]', false);
+        } else {
+          $this->addValidationResponse($ajax_response, $this->t('Review image is valid.'), '[data-drupal-selector="edit-review-image-wrapper"]', true);
+        }
+      }
+    } else {
+      $this->addValidationResponse($ajax_response, $this->t('No review image selected.'), '[data-drupal-selector="edit-review-image-wrapper"]', true);
+    }
+
+    return $ajax_response;
+  }
+
+  /**
+   * @param array $form
+   * @param FormStateInterface $form_state
+   * @return AjaxResponse
+   */
   public function validateForm(array &$form, FormStateInterface $form_state): AjaxResponse {
     $response = new AjaxResponse();
 
@@ -256,6 +376,44 @@ class GuestbookForm extends FormBase {
     // Validate message
     if (empty($form_state->getValue('message'))) {
       $this->addValidationResponse($response, $this->t('The message cannot be empty.'), '#edit-cat-name', FALSE);
+    }
+
+    // Validate review
+    if (empty($form_state->getValue('review'))) {
+      $form_state->setErrorByName('review', $this->t('The review cannot be empty.'));
+    }
+
+    $avatar = $form_state->getValue('avatar');
+    if (!empty($avatar)) {
+      $file = File::load($avatar[0]);
+      if ($file) {
+        $errors = file_validate($file, $form['avatar']['#upload_validators']);
+        if (!empty($errors)) {
+          $error_message = reset($errors);
+          $this->addValidationResponse($response, $error_message, '#edit-avatar', FALSE);
+        } else {
+          $this->addValidationResponse($response, $this->t('Avatar is valid.'), '#edit-avatar', TRUE);
+        }
+      }
+    } else {
+      $this->addValidationResponse($response, $this->t('No avatar selected.'), '#edit-avatar', TRUE);
+    }
+
+    // Validate review image
+    $review_image = $form_state->getValue('review_image');
+    if (!empty($review_image)) {
+      $file = File::load($review_image[0]);
+      if ($file) {
+        $errors = file_validate($file, $form['review_image']['#upload_validators']);
+        if (!empty($errors)) {
+          $error_message = reset($errors);
+          $this->addValidationResponse($response, $error_message, '#edit-review-image', FALSE);
+        } else {
+          $this->addValidationResponse($response, $this->t('Review image is valid.'), '#edit-review-image', TRUE);
+        }
+      }
+    } else {
+      $this->addValidationResponse($response, $this->t('No review image selected.'), '#edit-review-image', TRUE);
     }
 
     return $response;
@@ -281,7 +439,7 @@ class GuestbookForm extends FormBase {
     $response = new AjaxResponse();
 
     $this->validateForm($form, $form_state);
-    if (count($form_state->getErrors()) > 0) {
+    if ($form_state->hasAnyErrors()) {
       foreach ($form_state->getErrors() as $name => $error) {
         $this->addValidationResponse($response, $error, '[name="' . $name . '"]', FALSE);
       }
@@ -289,33 +447,58 @@ class GuestbookForm extends FormBase {
     }
 
     $connection = Database::getConnection();
+    $fields = [
+      'name' => $form_state->getValue('name'),
+      'email' => $form_state->getValue('email'),
+      'phone' => $form_state->getValue('phone'),
+      'message' => $form_state->getValue('message'),
+      'review' => $form_state->getValue('review'),
+      'created' => time(),
+    ];
+
+    // Handle avatar
+    $avatar = $form_state->getValue('avatar');
+    if (!empty($avatar)) {
+      $file = File::load($avatar[0]);
+      if ($file) {
+        $file->setPermanent();
+        $file->save();
+        $fields['avatar_fid'] = $file->id();
+      }
+    }
+
+    // Handle image
+    $image = $form_state->getValue('review_image');
+    if (!empty($image)) {
+      $file = File::load($image[0]);
+      if ($file) {
+        $file->setPermanent();
+        $file->save();
+        $fields['review_image_fid'] = $file->id();
+      }
+    }
+
+    // Insert into database
     $connection->insert('guestbook_entries')
-      ->fields([
-        'name' => $form_state->getValue('name'),
-        'email' => $form_state->getValue('email'),
-        'phone' => $form_state->getValue('phone'),
-        'message' => $form_state->getValue('message'),
-        'created' => time(),
-      ])
+      ->fields($fields)
       ->execute();
 
-    // Display success message.
+    // Display success message
     $response->addCommand(new MessageCommand(
-      $this->t('%name your entry has been saved.', [
+      $this->t('%name, your entry has been saved.', [
         '%name' => $form_state->getValue('name'),
       ]),
       NULL,
-      ['type' => 'status']));
+      ['type' => 'status']
+    ));
 
-    // Reset form state and rebuild the form.
+    // Reset form state and rebuild the form
     $form_state->setRebuild();
     $form_state->setValues([]);
     $form_state->setUserInput([]);
 
-    // Use the FormBuilder service to rebuild the form.
+    // Rebuild and replace the form
     $rebuilt_form = $this->formBuilder->rebuildForm($this->getFormId(), $form_state, $form);
-
-    // Replace the old form with the new one.
     $response->addCommand(new ReplaceCommand('#' . $this->getFormId(), $rebuilt_form));
 
     return $response;
