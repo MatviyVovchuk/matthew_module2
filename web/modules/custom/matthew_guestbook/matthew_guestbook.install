@@ -5,8 +5,11 @@
  * Install, update and uninstall functions for the matthew_guestbook module.
  */
 
-use Drupal\Core\Database\Database;
-use Drupal\file\Entity\File;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\media\Entity\MediaType;
 
 /**
  * Implements hook_schema().
@@ -58,6 +61,16 @@ function matthew_guestbook_schema() {
         'not null' => FALSE,
         'description' => 'The File ID of the review image.',
       ],
+      'avatar_mid' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'The Media ID of the avatar image.',
+      ],
+      'review_image_mid' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'The Media ID of the review image.',
+      ],
       'created' => [
         'type' => 'int',
         'not null' => TRUE,
@@ -74,36 +87,323 @@ function matthew_guestbook_schema() {
 }
 
 /**
+ * Implements hook_install().
+ */
+function matthew_guestbook_install() {
+  // Create media type for avatar.
+  $avatar_media_type = MediaType::create([
+    'id' => 'avatar',
+    'label' => 'Avatar',
+  // Specify the source as 'image'.
+    'source' => 'image',
+    'description' => 'Media type for user avatars.',
+    'source_configuration' => [
+  // The field that will be used as the image source.
+      'source_field' => 'field_avatar_image',
+    ],
+  ]);
+  $avatar_media_type->save();
+
+  // Add field to the media type 'avatar'.
+  $field_storage = FieldStorageConfig::create([
+    'field_name' => 'field_avatar_image',
+    'entity_type' => 'media',
+    'type' => 'image',
+    'cardinality' => 1,
+  ]);
+  $field_storage->save();
+
+  $field_instance = FieldConfig::create([
+    'field_storage' => $field_storage,
+    'bundle' => 'avatar',
+    'label' => 'Avatar Image',
+  // Set the field as required.
+    'required' => TRUE,
+    'settings' => [
+      'file_extensions' => 'jpeg jpg png',
+      'max_filesize' => '2 MB',
+      'max_resolution' => '',
+      'min_resolution' => '',
+      'alt_field' => TRUE,
+      'alt_field_required' => TRUE,
+      'title_field' => FALSE,
+      'title_field_required' => FALSE,
+    ],
+  ]);
+  $field_instance->save();
+
+  // Manage form display settings for 'avatar'.
+  $form_display = EntityFormDisplay::load('media.avatar.default');
+  if (!$form_display) {
+    $form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'avatar',
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $form_display->setComponent('field_avatar_image', [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])
+    ->removeComponent('name')
+    ->save();
+
+  // Create and configure the media_library form display.
+  $media_library_form_display = EntityFormDisplay::load('media.avatar.media_library');
+  if (!$media_library_form_display) {
+    $media_library_form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'avatar',
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_form_display->setComponent('field_avatar_image', [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])
+    ->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->save();
+
+  // Manage display settings for 'avatar' in default mode.
+  $view_display = EntityViewDisplay::load('media.avatar.default');
+  if (!$view_display) {
+    $view_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'avatar',
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $view_display->setComponent('field_avatar_image', [
+    'type' => 'image',
+    'label' => 'visually_hidden',
+    'weight' => 0,
+  ])
+    ->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->removeComponent('thumbnail')
+    ->save();
+
+  // Media library view mode settings for 'avatar'.
+  $media_library_display = EntityViewDisplay::load('media.avatar.media_library');
+  if (!$media_library_display) {
+    $media_library_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'avatar',
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_display->setComponent('thumbnail', [
+    'type' => 'image',
+    'label' => 'hidden',
+    'weight' => 0,
+  ])
+    ->removeComponent('field_avatar_image')
+    ->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->save();
+
+  // Repeat the same for the 'review_image' media type.
+  $review_image_media_type = MediaType::create([
+    'id' => 'review_image',
+    'label' => 'Review Image',
+  // Specify the source as 'image'.
+    'source' => 'image',
+    'description' => 'Media type for review images.',
+    'source_configuration' => [
+  // The field that will be used as the image source.
+      'source_field' => 'field_review_image',
+    ],
+  ]);
+  $review_image_media_type->save();
+
+  // Add field to the media type 'review_image'.
+  $field_storage = FieldStorageConfig::create([
+    'field_name' => 'field_review_image',
+    'entity_type' => 'media',
+    'type' => 'image',
+    'cardinality' => 1,
+  ]);
+  $field_storage->save();
+
+  $field_instance = FieldConfig::create([
+    'field_storage' => $field_storage,
+    'bundle' => 'review_image',
+    'label' => 'Review Image',
+  // Set the field as required.
+    'required' => TRUE,
+    'settings' => [
+      'file_extensions' => 'jpeg jpg png',
+      'max_filesize' => '5 MB',
+      'max_resolution' => '',
+      'min_resolution' => '',
+      'alt_field' => TRUE,
+      'alt_field_required' => TRUE,
+      'title_field' => FALSE,
+      'title_field_required' => FALSE,
+    ],
+  ]);
+  $field_instance->save();
+
+  // Manage form display settings for 'review_image'.
+  $form_display = EntityFormDisplay::load('media.review_image.default');
+  if (!$form_display) {
+    $form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'review_image',
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $form_display->setComponent('field_review_image', [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])
+    ->removeComponent('name')
+    ->save();
+
+  // Create and configure the media_library form display for review_image.
+  $media_library_form_display = EntityFormDisplay::load('media.review_image.media_library');
+  if (!$media_library_form_display) {
+    $media_library_form_display = EntityFormDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'review_image',
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_form_display->setComponent('field_review_image', [
+    'type' => 'image_image',
+    'weight' => 1,
+  ])
+    ->removeComponent('name')
+    ->removeComponent('uid')
+    ->removeComponent('created')
+    ->removeComponent('path')
+    ->removeComponent('status')
+    ->save();
+
+  // Manage display settings for 'review_image' in default mode.
+  $view_display = EntityViewDisplay::load('media.review_image.default');
+  if (!$view_display) {
+    $view_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'review_image',
+      'mode' => 'default',
+      'status' => TRUE,
+    ]);
+  }
+  $view_display->setComponent('field_review_image', [
+    'type' => 'image',
+    'label' => 'visually_hidden',
+    'weight' => 0,
+  ])
+    ->removeComponent('thumbnail')
+    ->save();
+
+  // Media library view mode settings for 'review_image'.
+  $media_library_display = EntityViewDisplay::load('media.review_image.media_library');
+  if (!$media_library_display) {
+    $media_library_display = EntityViewDisplay::create([
+      'targetEntityType' => 'media',
+      'bundle' => 'review_image',
+      'mode' => 'media_library',
+      'status' => TRUE,
+    ]);
+  }
+  $media_library_display->setComponent('thumbnail', [
+    'type' => 'image',
+    'label' => 'hidden',
+    'weight' => 0,
+  ])
+    ->removeComponent('field_review_image')
+    ->save();
+}
+
+/**
  * Implements hook_uninstall().
  */
 function matthew_guestbook_uninstall() {
-  $schema = Database::getConnection()->schema();
+  $database = \Drupal::database();
+  $file_storage = \Drupal::entityTypeManager()->getStorage('file');
+  $media_storage = \Drupal::entityTypeManager()->getStorage('media');
 
   // Get all entries from the guestbook table.
-  $entries = Database::getConnection()
-    ->select('guestbook_entries', 'g')
-    ->fields('g', ['avatar_fid', 'review_image_fid'])
+  $entries = $database->select('guestbook_entries', 'g')
+    ->fields('g', ['avatar_fid', 'review_image_fid', 'avatar_mid', 'review_image_mid'])
     ->execute()
     ->fetchAll();
 
-  // Delete associated files.
+  $file_ids = [];
+  $media_ids = [];
+
+  // Collect all file and media IDs.
   foreach ($entries as $entry) {
     if (!empty($entry->avatar_fid)) {
-      $file = File::load($entry->avatar_fid);
-      if ($file) {
-        $file->delete();
-      }
+      $file_ids[] = $entry->avatar_fid;
     }
     if (!empty($entry->review_image_fid)) {
-      $file = File::load($entry->review_image_fid);
-      if ($file) {
-        $file->delete();
-      }
+      $file_ids[] = $entry->review_image_fid;
+    }
+    if (!empty($entry->avatar_mid)) {
+      $media_ids[] = $entry->avatar_mid;
+    }
+    if (!empty($entry->review_image_mid)) {
+      $media_ids[] = $entry->review_image_mid;
     }
   }
 
+  // Delete files in bulk.
+  if (!empty($file_ids)) {
+    $files = $file_storage->loadMultiple(array_unique($file_ids));
+    $file_storage->delete($files);
+  }
+
+  // Delete media entities in bulk.
+  if (!empty($media_ids)) {
+    $media_entities = $media_storage->loadMultiple(array_unique($media_ids));
+    $media_storage->delete($media_entities);
+  }
+
   // Drop the table.
+  $schema = $database->schema();
   if ($schema->tableExists('guestbook_entries')) {
     $schema->dropTable('guestbook_entries');
   }
+
+  // Delete the avatar media type.
+  if ($media_type = MediaType::load('avatar')) {
+    $media_type->delete();
+  }
+
+  // Delete the field used by avatar media type.
+  if ($field_storage = FieldStorageConfig::load('media.field_avatar_image')) {
+    $field_storage->delete();
+  }
+
+  // Delete the review image media type.
+  if ($media_type = MediaType::load('review_image')) {
+    $media_type->delete();
+  }
+
+  // Delete the field used by review image media type.
+  if ($field_storage = FieldStorageConfig::load('media.field_review_image')) {
+    $field_storage->delete();
+  }
+
+  // Clear all caches.
+  drupal_flush_all_caches();
 }

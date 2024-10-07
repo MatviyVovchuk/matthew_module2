@@ -1,35 +1,39 @@
-{# modules/custom/matthew_guestbook/templates/matthew-guestbook.html.twig #}
-
 <div class="guestbook-entries">
-  {% for entry in entries %}
-    <div class="guestbook-entry">
-      <div class="entry-header">
-        <h2>{{ entry.name }}</h2>
-        <p class="entry-meta">{{ entry.email }} | {{ entry.phone }}</p>
-        {% if entry.avatar_url %}
-          <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
-        {% else %}
-          <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
-        {% endif %}
+  {% if entries is empty %}
+    <p>{{ 'There are currently no entries in the guestbook.'|t }}</p>
+    <p>{{ 'You can add new entries by clicking the button below.'|t }}</p>
+    <a href="{{ path('matthew_guestbook.form') }}" class="button button--primary">{{ 'Add New Entry'|t }}</a>
+  {% else %}
+    {% for entry in entries %}
+      <div class="guestbook-entry">
+        <div class="entry-header">
+          <h2>{{ entry.name }}</h2>
+          <p class="entry-meta">{{ entry.email }} | {{ entry.phone }}</p>
+          {% if entry.avatar_url %}
+            <img src="{{ entry.avatar_url }}" alt="{{ entry.name }}'s avatar" class="entry-avatar">
+          {% else %}
+            <img src="{{ base_path }}modules/custom/matthew_guestbook/images/default_avatar.jpg" alt="{{ entry.name }}'s default avatar" class="entry-avatar">
+          {% endif %}
+        </div>
+        <div class="entry-message">
+          <p>{{ entry.message }}</p>
+        </div>
+        <div class="entry-review">
+          <p>{{ entry.review }}</p>
+          {% if entry.review_image_url %}
+            <img src="{{ entry.review_image_url }}" alt="Review image" class="entry-review-image">
+          {% endif %}
+        </div>
+        <div class="entry-footer">
+          <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
+          {% if is_admin %}
+            <div class="entry-actions">
+              <a href="{{ path('matthew_guestbook.edit', {'id': entry.id}) }}" class="button button--action button--primary edit-button">{{ 'Edit'|t }}</a>
+              <a href="{{ path('matthew_guestbook.delete', {'id': entry.id}) }}" class="button button--action button--danger delete-button">{{ 'Delete'|t }}</a>
+            </div>
+          {% endif %}
+        </div>
       </div>
-      <div class="entry-message">
-        <p>{{ entry.message }}</p>
-      </div>
-      <div class="entry-review">
-        <p>{{ entry.review }}</p>
-        {% if entry.review_image_url %}
-          <img src="{{ entry.review_image_url }}" alt="Review image" class="entry-review-image">
-        {% endif %}
-      </div>
-      <div class="entry-footer">
-        <p class="entry-date">{{ entry.created|date("m-d-Y H:i:s") }}</p>
-        {% if is_admin %}
-          <div class="entry-actions">
-            <a href="{{ path('matthew_guestbook.edit', {'id': entry.id}) }}" class="button button--action button--primary edit-button">{{ 'Edit'|t }}</a>
-            <a href="{{ path('matthew_guestbook.delete', {'id': entry.id}) }}" class="button button--action button--danger delete-button">{{ 'Delete'|t }}</a>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
+  {% endif %}
 </div>

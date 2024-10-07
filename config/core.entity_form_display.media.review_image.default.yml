@@ -1,0 +1,55 @@
+uuid: e67be8bf-e316-423b-904b-00f04a29fcf2
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.media.review_image.field_review_image
+    - image.style.thumbnail
+    - media.type.review_image
+  module:
+    - image
+    - path
+id: media.review_image.default
+targetEntityType: media
+bundle: review_image
+mode: default
+content:
+  created:
+    type: datetime_timestamp
+    weight: 10
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_review_image:
+    type: image_image
+    weight: 1
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+    third_party_settings: {  }
+  path:
+    type: path
+    weight: 30
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 100
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  uid:
+    type: entity_reference_autocomplete
+    weight: 5
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  name: true

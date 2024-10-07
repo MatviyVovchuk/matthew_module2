@@ -11,6 +11,8 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\file\FileInterface;
+use Drupal\media\MediaInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -101,7 +103,7 @@ class GuestbookForm extends FormBase {
       '#description' => $this->t('Enter your phone number. Only digits are allowed and it should not exceed 15 characters.'),
       '#required' => TRUE,
       '#attributes' => [
-        'pattern' => '/(7|8|9)\d{9}/',
+    // 'pattern' => '/(7|8|9)\d{9}/',
         'maxlength' => 12,
       ],
       '#ajax' => [
@@ -136,7 +138,7 @@ class GuestbookForm extends FormBase {
       '#type' => 'media_library',
       '#title' => $this->t('Avatar'),
       '#description' => $this->t('Upload your avatar. Allowed formats: jpeg, jpg, png. Max file size: 2MB.'),
-      '#allowed_bundles' => ['image'],
+      '#allowed_bundles' => ['avatar'],
       '#required' => FALSE,
       '#upload_validators' => [
         'file_validate_extensions' => ['jpeg jpg png'],
@@ -156,7 +158,7 @@ class GuestbookForm extends FormBase {
       '#type' => 'media_library',
       '#title' => $this->t('Review Image'),
       '#description' => $this->t('Upload an image for your review. Allowed formats: jpeg, jpg, png. Max file size: 5MB.'),
-      '#allowed_bundles' => ['image'],
+      '#allowed_bundles' => ['review_image'],
       '#required' => FALSE,
       '#upload_validators' => [
         'file_validate_extensions' => ['jpeg jpg png'],
@@ -355,7 +357,7 @@ class GuestbookForm extends FormBase {
     $avatar = $form_state->getValue('avatar');
 
     if (!empty($avatar) && is_array($avatar)) {
-      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($avatar));
+      $media_entity = $this->entityTypeManager->getStorage('media')->load($avatar);
       if ($media_entity) {
         $file_id = $media_entity->get('field_media_image')->target_id;
         if (!empty($file_id)) {
@@ -396,7 +398,7 @@ class GuestbookForm extends FormBase {
     $review_image = $form_state->getValue('review_image');
 
     if (!empty($review_image) && is_array($review_image)) {
-      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($review_image));
+      $media_entity = $this->entityTypeManager->getStorage('media')->load($review_image);
       if ($media_entity) {
         $file_id = $media_entity->get('field_media_image')->target_id;
         if (!empty($file_id)) {
@@ -455,7 +457,7 @@ class GuestbookForm extends FormBase {
     // Validate avatar image.
     $avatar = $form_state->getValue('avatar');
     if (!empty($avatar) && is_array($avatar)) {
-      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($avatar));
+      $media_entity = $this->entityTypeManager->getStorage('media')->load($avatar);
       if ($media_entity) {
         $file_id = $media_entity->get('field_media_image')->target_id;
         if (!empty($file_id)) {
@@ -474,7 +476,7 @@ class GuestbookForm extends FormBase {
     // Validate review image.
     $review_image = $form_state->getValue('review_image');
     if (!empty($review_image) && is_array($review_image)) {
-      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($review_image));
+      $media_entity = $this->entityTypeManager->getStorage('media')->load($review_image);
       if ($media_entity) {
         $file_id = $media_entity->get('field_media_image')->target_id;
         if (!empty($file_id)) {
@@ -501,40 +503,23 @@ class GuestbookForm extends FormBase {
   }
 
   /**
-   * Retrieves the file ID of an image from a Media Library field.
+   * Get the file ID from a media entity.
    *
-   * @param string $fieldName
-   *   The name of the Media Library field in the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current form state.
+   * @param \Drupal\media\Entity\MediaInterface $media
+   *   The media entity.
    *
-   * @return int
-   *   The file ID if found, or -1 if not found.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @return int|string|null
+   *   The file ID, or NULL if not found.
    */
-  public function getImageId(string $fieldName, FormStateInterface $form_state): int {
-    $media_id = $form_state->getValue($fieldName);
-
-    if (!empty($media_id) && is_array($media_id)) {
-      // Load the first media entity ID from the array.
-      $media_entity = $this->entityTypeManager->getStorage('media')->load(reset($media_id));
-
-      if ($media_entity) {
-        $file_id = $media_entity->get('field_media_image')->target_id;
-
-        if (!empty($file_id)) {
-          $file = $this->entityTypeManager->getStorage('file')->load($file_id);
-
-          if ($file) {
-            return $file->id();
-          }
-        }
+  public function getFileIdFromMedia(MediaInterface $media) {
+    $field_name = $media->getSource()->getConfiguration()['source_field'];
+    if ($media->hasField($field_name)) {
+      $file = $media->get($field_name)->entity;
+      if ($file instanceof FileInterface) {
+        return $file->id();
       }
     }
-
-    return -1;
+    return NULL;
   }
 
   /**
@@ -559,8 +544,35 @@ class GuestbookForm extends FormBase {
       return $response;
     }
 
-    $avatar = $this->getImageId('avatar', $form_state);
-    $image = $this->getImageId('review_image', $form_state);
+    // Handle avatar.
+    $avatar_media_id = $form_state->getValue('avatar');
+    $avatar_file_id = NULL;
+    if (!empty($avatar_media_id)) {
+      // $avatar_media = Media::load($avatar_media_id);
+      $avatar_media = $this->entityTypeManager->getStorage('media')->load($avatar_media_id);
+      if ($avatar_media) {
+        $avatar_media_id = $avatar_media->id();
+        $avatar_file_id = $this->getFileIdFromMedia($avatar_media);
+      }
+    }
+    else {
+      $avatar_media_id = NULL;
+    }
+
+    // Handle review image.
+    $review_image_media_id = $form_state->getValue('review_image');
+    $review_image_file_id = NULL;
+    if (!empty($review_image_media_id)) {
+      // $review_image_media = Media::load($review_image_media_id);
+      $review_image_media = $this->entityTypeManager->getStorage('media')->load($review_image_media_id);
+      if ($review_image_media) {
+        $review_image_media_id = $review_image_media->id();
+        $review_image_file_id = $this->getFileIdFromMedia($review_image_media);
+      }
+    }
+    else {
+      $review_image_media_id = NULL;
+    }
 
     $connection = Database::getConnection();
     $fields = [
@@ -569,8 +581,10 @@ class GuestbookForm extends FormBase {
       'phone' => $form_state->getValue('phone'),
       'message' => $form_state->getValue('message'),
       'review' => $form_state->getValue('review'),
-      'avatar_fid' => $avatar == -1 ? NULL : $avatar,
-      'review_image_fid' => $image == -1 ? NULL : $image,
+      'avatar_fid' => $avatar_file_id,
+      'review_image_fid' => $review_image_file_id,
+      'avatar_mid' => $avatar_media_id,
+      'review_image_mid' => $review_image_media_id,
       'created' => time(),
     ];
 
